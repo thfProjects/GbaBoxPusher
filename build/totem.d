@@ -1,1 +1,1 @@
-totem.o: c:/devkitPro/mygames/boxpusher/source/totem.c
+totem.o: c:/users/marko/desktop/gbadev/mygames/boxpusher/source/totem.c

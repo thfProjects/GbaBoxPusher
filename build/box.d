@@ -1,1 +1,1 @@
-box.o: c:/devkitPro/mygames/boxpusher/source/box.c
+box.o: c:/users/marko/desktop/gbadev/mygames/boxpusher/source/box.c

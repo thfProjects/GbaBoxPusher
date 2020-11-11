@@ -22,13 +22,17 @@ typedef struct point {
 #define BOX_FLAG 3
 #define PUSHER_FLAG 4
 #define hold_time 20
+#define levels 2
 
 OBJ_ATTRS obj_buffer[128];
 
+const u16* levelmaps[] = {level1Map, level2Map};
+const u16* levelcolmaps[] = {level1colMap, level2colMap};
+
 point tile_index(int x, int y){
 	point index;
-	index.x = ((x + 8) % 256)/8;
-	index.y = ((y + 8) % 256)/8;
+	index.x = (x + 8)/8; //+8 zbog bg offseta
+	index.y = (y + 8)/8;
 	return index;
 }
 
@@ -47,21 +51,27 @@ void find(int *x, int *y, int flag){
 int isCollision(volatile OBJ_ATTRS obj ,DIRECTION direction){
 	int i;
 
+	point collidingTile;
+
 	if(direction == UP){
 		for(i = 0;i <= 2; i++){
-			if(se_mem[colmap_index][se_index(tile_index(get_obj_x(obj)+8*i-i/2, get_obj_y(obj)-1).x, tile_index(get_obj_x(obj)+8*i-i/2, get_obj_y(obj)-1).y, 64)] == 1) return 1;
-		}
+			collidingTile = tile_index(get_obj_x(obj)+8*i-i/2, get_obj_y(obj)-1);                              //the get objx part is ensuring that the left, middle and right of sprite is not coliding
+			if(se_mem[colmap_index][se_index(collidingTile.x, collidingTile.y, 32)] == COL_FLAG) return 1;
+		} 
 	}else if(direction == RIGHT){
 		for(i = 0;i <= 2; i++){
-			if(se_mem[colmap_index][se_index(tile_index(get_obj_x(obj)+width+1, get_obj_y(obj)+8*i-i/2).x, tile_index(get_obj_x(obj)+width+1, get_obj_y(obj)+8*i-i/2).y, 64)] == 1) return 1;
+			collidingTile = tile_index(get_obj_x(obj)+width+1, get_obj_y(obj)+8*i-i/2);
+			if(se_mem[colmap_index][se_index(collidingTile.x, collidingTile.y, 32)] == COL_FLAG) return 1;
 		}
 	}else if(direction == DOWN){
 		for(i = 0;i <= 2; i++){
-			if(se_mem[colmap_index][se_index(tile_index(get_obj_x(obj)+8*i-i/2, get_obj_y(obj)+height+1).x, tile_index(get_obj_x(obj)+8*i-i/2, get_obj_y(obj)+height+1).y, 64)] == 1) return 1;
+			collidingTile = tile_index(get_obj_x(obj)+8*i-i/2, get_obj_y(obj)+height+1);
+			if(se_mem[colmap_index][se_index(collidingTile.x, collidingTile.y, 32)] == COL_FLAG) return 1;
 		}
 	}else if(direction == LEFT){
 		for(i = 0;i <= 2; i++){
-			if(se_mem[colmap_index][se_index(tile_index(get_obj_x(obj)-1, get_obj_y(obj)+8*i-i/2).x, tile_index(get_obj_x(obj)-1, get_obj_y(obj)+8*i-i/2).y, 64)] == 1) return 1;
+			collidingTile = tile_index(get_obj_x(obj)-1, get_obj_y(obj)+8*i-i/2);
+			if(se_mem[colmap_index][se_index(collidingTile.x, collidingTile.y, 32)] == COL_FLAG) return 1;
 		}
 	}
 	
@@ -86,13 +96,15 @@ int isPushing(volatile OBJ_ATTRS pusher, volatile OBJ_ATTRS box, DIRECTION direc
 int menu(){
 	REG_DISPCNT = DCNT_MODE4 |  DCNT_BG2 | DCNT_OBJ | DCNT_OBJ_1D;
 
+	oam_init(obj_buffer, 128);
+
 	memcpy(vid_mem, boxmenuBitmap, boxmenuBitmapLen);
 	memcpy(pal_mem, boxmenuPal, boxmenuPalLen);
 
 	memcpy(&tile_mem[5][0], pointerBitmap, pointerBitmapLen);
 	memcpy(obj_pal_mem, boxmenuPal, boxmenuPalLen);
 
-	volatile OBJ_ATTRS * pointer = &oam_mem[0];
+	volatile OBJ_ATTRS * pointer = &obj_buffer[0];
 	set_obj_attrs(pointer, 0, ATTR1_SIZE_8x8, ATTR2_ID(512));
 
 	int x = 72;
@@ -117,11 +129,12 @@ int menu(){
 		set_obj_y(pointer, y + (index - 1)*16);
 
 		if(KEY_PRESSED(KEY_A)) return index;
-		
+
+		oam_copy(oam_mem, obj_buffer, 1);
 	}
 }
 
-void game(){
+void game(int level){
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG2 | DCNT_OBJ | DCNT_OBJ_1D;
 
 	oam_init(obj_buffer, 128);
@@ -134,8 +147,8 @@ void game(){
 
 	memcpy(tile_mem, levelTiles, levelTilesLen);
 	memcpy(pal_mem, levelPal, levelPalLen);
-	memcpy(&se_mem[map_index][0], level2Map, levelMapLen);
-	memcpy(&se_mem[colmap_index][0], level2colMap, levelcolMapLen);
+	memcpy(&se_mem[map_index][0], levelmaps[level], levelMapLen);
+	memcpy(&se_mem[colmap_index][0], levelcolmaps[level], levelcolMapLen);
 
 	REG_BGCNT[2] = BG_CBB(0) | BG_SBB(16) | BG_REG_32x32;
 
@@ -216,8 +229,14 @@ int main()
 {
     while(1){
 		switch(menu()){
-			case 1: game();
+			case 1: {
+				int level = 0;
+				while(level < 2){
+					game(level);
+					level++;
+				}
 				break;
+			}
 		}
 	}
 

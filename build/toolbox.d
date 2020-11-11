@@ -1,4 +1,5 @@
-toolbox.o: c:/devkitPro/mygames/boxpusher/source/toolbox.c \
- c:/devkitPro/mygames/boxpusher/include/toolbox.h
+toolbox.o: \
+ c:/users/marko/desktop/gbadev/mygames/boxpusher/source/toolbox.c \
+ c:/users/marko/desktop/gbadev/mygames/boxpusher/include/toolbox.h
 
-c:/devkitPro/mygames/boxpusher/include/toolbox.h:
+c:/users/marko/desktop/gbadev/mygames/boxpusher/include/toolbox.h:
