@@ -231,7 +231,7 @@ int main()
 		switch(menu()){
 			case 1: {
 				int level = 0;
-				while(level < 2){
+				while(level < levels){
 					game(level);
 					level++;
 				}
